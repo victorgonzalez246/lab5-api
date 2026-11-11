@@ -124,6 +124,15 @@ module.exports = swaggerJsdoc({
             },
           },
         },
+        IASaturada: {
+          description: 'Claude saturado temporalmente; reintentar más tarde',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+              example: { error: 'IA_NO_DISPONIBLE' },
+            },
+          },
+        },
         IANoDisponible: {
           description: 'Claude no disponible',
           content: {

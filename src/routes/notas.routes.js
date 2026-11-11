@@ -115,11 +115,7 @@ router.delete('/:id', (req, res) => {
  *       502:
  *         $ref: '#/components/responses/IANoDisponible'
  *       503:
- *         description: Claude saturado temporalmente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         $ref: '#/components/responses/IASaturada'
  */
 router.post('/:id/resumen', limiteIA(), async (req, res) => {
   const nota = notas.buscar(Number(req.params.id)); // 404 si no existe
