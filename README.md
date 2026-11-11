@@ -1,6 +1,6 @@
 # Lab 5: API de notas con Express, Swagger y Claude
 
-API REST para guardar notas, con dos funciones de inteligencia artificial: hacerle una pregunta libre a Claude y pedirle que resuma una nota en tres viñetas. Todos los endpoints están documentados con OpenAPI 3 y se pueden probar desde Swagger UI.
+API REST para guardar notas en una base de datos, con dos funciones de inteligencia artificial: hacerle una pregunta libre a Claude y pedirle que resuma una nota en tres viñetas. Todos los endpoints están documentados con OpenAPI 3 y se pueden probar desde Swagger UI.
 
 El cliente (Swagger UI o Postman) solo habla con esta API. La única parte del proyecto que habla con Claude es el backend, y la API key nunca sale del servidor.
 
@@ -30,6 +30,8 @@ cp .env.example .env      # en Windows: copy .env.example .env
 Abrir `.env` y pegar la API key en `ANTHROPIC_API_KEY`. Después:
 
 ```bash
+npm run migrate  # crea la base SQLite y aplica las migraciones
+npm run seed     # opcional: carga dos notas de ejemplo
 npm run dev      # desarrollo, reinicia al guardar (nodemon)
 npm start        # ejecución normal
 npm test         # pruebas automatizadas, no gastan créditos
@@ -45,6 +47,7 @@ La documentación queda en http://localhost:3000/api-docs.
 | `CLAUDE_MODEL` | Modelo que se usa en las llamadas. Se puede cambiar sin tocar el código. |
 | `PORT` | Puerto del servidor (3000 por defecto). |
 | `IA_LIMITE_POR_MINUTO` | Máximo de peticiones por minuto a cada ruta de IA (10 por defecto). |
+| `DATABASE_URL` | Ubicación de la base SQLite. `file:./dev.db` la deja en `prisma/dev.db`. |
 
 El archivo `.env` está en `.gitignore` y no se sube. `.env.example` sí se sube, sin la clave.
 
@@ -55,12 +58,14 @@ El archivo `.env` está en `.gitignore` y no se sube. `.env.example` sí se sube
 | GET | `/api/notas` | Lista todas las notas | No |
 | GET | `/api/notas/:id` | Obtiene una nota | No |
 | POST | `/api/notas` | Crea una nota (`titulo`, `contenido`) | No |
+| PUT | `/api/notas/:id` | Actualiza una nota (`titulo`, `contenido`) | No |
 | DELETE | `/api/notas/:id` | Elimina una nota | No |
 | POST | `/api/ia/preguntar` | Envía una pregunta libre al modelo y devuelve `pregunta`, `respuesta` y `uso` | Sí |
+| GET | `/api/ia/historial` | Lista las preguntas hechas, con su respuesta y sus tokens | No |
 | POST | `/api/notas/:id/resumen` | Resume una nota en 3 viñetas | Sí |
 | GET | `/api-docs` | Documentación interactiva (Swagger UI) | No |
 
-Las notas se guardan en memoria, así que se pierden al reiniciar el servidor. Para que siempre haya con qué probar, al arrancar se cargan dos notas de ejemplo con los id 1 y 2.
+Las notas se guardan en una base SQLite, así que siguen ahí al reiniciar el servidor. `npm run seed` carga dos notas de ejemplo para tener con qué probar. Cada nota lleva además sus fechas `creadaEn` y `actualizadaEn`.
 
 ### Respuestas de error
 
@@ -78,11 +83,17 @@ Todos los errores tienen la misma forma: `{ "error": "..." }`. Los de validació
 ## Estructura
 
 ```
+prisma/
+├── schema.prisma                modelos Nota y Consulta
+├── migrations/                  una carpeta por migración, con su SQL
+└── seed.js                      notas de ejemplo
 src/
 ├── config/swagger.js            especificación OpenAPI
+├── config/prisma.js             conexión a la base de datos
 ├── routes/notas.routes.js       CRUD de notas y resumen
-├── routes/ia.routes.js          pregunta libre
-├── services/notas.service.js    notas en memoria
+├── routes/ia.routes.js          pregunta libre e historial
+├── services/notas.service.js    notas en la base de datos
+├── services/consultas.service.js historial de preguntas
 ├── services/claude.service.js   único archivo que usa el SDK
 ├── middlewares/validar.js       validación con Zod
 ├── middlewares/errorHandler.js  manejo central de errores
@@ -91,6 +102,7 @@ src/
 ├── app.js
 └── index.js
 test/                            pruebas con supertest
+postman/                         colección para probar desde Postman
 docs/                            capturas de Swagger UI
 ```
 
@@ -189,7 +201,26 @@ El conflicto fue en `src/routes/notas.routes.js`, que es justo el punto donde se
 
 Se resolvió integrando `feature/notas` dentro de `feature/ia` y editando el archivo a mano para conservar los dos bloques: primero las rutas del CRUD y al final la de resumen, que depende de `notas.buscar()`. También se mantuvo el `require` de `claude.service` que venía de `feature/ia`. Con los dos bloques en su sitio se hizo el commit del merge, y después se comprobó con las pruebas automatizadas que todo seguía funcionando. `notas.service.js` solo había cambiado en `feature/notas`, así que Git lo integró sin ayuda.
 
+## Base de datos y migraciones
+
+Los datos se guardan con Prisma en SQLite. Hay dos tablas, cada una creada por su migración:
+
+| Migración | Tabla | Qué guarda |
+|---|---|---|
+| `crear_notas` | `notas` | `id`, `titulo`, `contenido`, `creadaEn`, `actualizadaEn` |
+| `crear_consultas` | `consultas` | Cada pregunta hecha a Claude: `pregunta`, `respuesta`, `inputTokens`, `outputTokens`, `creadaEn` |
+
+```bash
+npm run migrate                              # aplica las migraciones pendientes
+npx prisma migrate dev --name <nombre>       # crea una migración nueva tras cambiar schema.prisma
+npx prisma studio                            # abre la base en el navegador
+```
+
+El archivo de la base (`prisma/dev.db`) no se sube al repositorio; se reconstruye con las migraciones.
+
 ## Retos extra
 
+- **Persistencia:** el arreglo en memoria se reemplazó por Prisma con SQLite. `notas.service` conserva las mismas funciones (`listar`, `buscar`, `crear`, `eliminar`) y suma `actualizar`, así que las rutas casi no cambiaron.
+- **Costo:** cada pregunta respondida se guarda con sus tokens de entrada y de salida, y se consulta en `GET /api/ia/historial`.
 - **Rate limit:** las dos rutas que llaman a Claude (`/api/ia/preguntar` y `/api/notas/:id/resumen`) están protegidas con `express-rate-limit`. Al pasar el límite responden `429` con `{ "error": "DEMASIADAS_PETICIONES" }`. El límite se ajusta con `IA_LIMITE_POR_MINUTO`.
-- **Pruebas automatizadas:** `npm test` ejecuta las pruebas de `test/` con `supertest` y el runner de Node. `claude.service` se reemplaza por una versión simulada, así que no se hace ninguna llamada real ni se gastan créditos. También se prueba la traducción de errores de Claude (401, 400, 429 y 529).
+- **Pruebas automatizadas:** `npm test` ejecuta las pruebas de `test/` con `supertest` y el runner de Node. `claude.service` se reemplaza por una versión simulada, así que no se hace ninguna llamada real ni se gastan créditos. Cada archivo de pruebas usa su propia base SQLite, creada con las mismas migraciones. También se prueba la traducción de errores de Claude (401, 400, 429 y 529).
