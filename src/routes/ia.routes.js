@@ -28,8 +28,9 @@ const preguntaSchema = z.object({
  *       503: { description: Claude saturado temporalmente }
  */
 router.post('/preguntar', limiteIA(), validar(preguntaSchema), async (req, res) => {
-  const r = await claude.preguntar(req.body.pregunta);
-  res.json(r);
+  const { pregunta } = req.body;
+  const r = await claude.preguntar(pregunta);
+  res.json({ pregunta, respuesta: r.respuesta, uso: r.uso });
 });
 
 module.exports = router;
