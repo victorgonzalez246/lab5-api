@@ -1,13 +1,16 @@
 // Comprueba el límite de peticiones de las rutas de IA (reto extra "Rate limit").
 process.env.ANTHROPIC_API_KEY = 'sk-ant-clave-de-prueba';
 process.env.IA_LIMITE_POR_MINUTO = '3';
+require('../scripts/preparar-bd-pruebas')('limite');
 
-const { test } = require('node:test');
+const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 
 const claude = require('../src/services/claude.service');
 const app = require('../src/app');
+
+after(() => require('../src/config/prisma').$disconnect());
 
 claude.preguntar = async () => ({
   respuesta: 'ok',

@@ -3,14 +3,18 @@
 process.env.ANTHROPIC_API_KEY = 'sk-ant-clave-de-prueba';
 process.env.CLAUDE_MODEL = 'modelo-de-prueba';
 process.env.IA_LIMITE_POR_MINUTO = '100';
+require('../scripts/preparar-bd-pruebas')('api');
 
-const { test, beforeEach } = require('node:test');
+const { test, beforeEach, after } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const claude = require('../src/services/claude.service');
 const app = require('../src/app');
+const prisma = require('../src/config/prisma');
+
+after(() => prisma.$disconnect());
 
 let llamadas;
 
@@ -46,6 +50,41 @@ test('GET /api/notas/:id devuelve la nota', async () => {
   const res = await request(app).get(`/api/notas/${creada.id}`);
   assert.equal(res.status, 200);
   assert.deepEqual(res.body, creada);
+});
+
+test('las notas se guardan en la base con sus fechas', async () => {
+  const creada = (await request(app).post('/api/notas').send(nota)).body;
+  const enBD = await prisma.nota.findUnique({ where: { id: creada.id } });
+  assert.equal(enBD.titulo, nota.titulo);
+  assert.ok(enBD.creadaEn instanceof Date);
+});
+
+test('PUT /api/notas/:id actualiza la nota', async () => {
+  const creada = (await request(app).post('/api/notas').send(nota)).body;
+  const res = await request(app)
+    .put(`/api/notas/${creada.id}`)
+    .send({ titulo: 'REST corregido', contenido: 'Contenido nuevo.' });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.id, creada.id);
+  assert.equal(res.body.titulo, 'REST corregido');
+  const leida = (await request(app).get(`/api/notas/${creada.id}`)).body;
+  assert.equal(leida.contenido, 'Contenido nuevo.');
+});
+
+test('PUT de una nota que no existe responde 404', async () => {
+  const res = await request(app).put('/api/notas/99999').send(nota);
+  assert.equal(res.status, 404);
+});
+
+test('PUT con datos inválidos responde 400', async () => {
+  const creada = (await request(app).post('/api/notas').send(nota)).body;
+  const res = await request(app).put(`/api/notas/${creada.id}`).send({ titulo: '' });
+  assert.equal(res.status, 400);
+});
+
+test('GET /api/notas/abc responde 404', async () => {
+  const res = await request(app).get('/api/notas/abc');
+  assert.equal(res.status, 404);
 });
 
 test('GET /api/notas/99999 responde 404', async () => {
@@ -96,6 +135,24 @@ test('POST /api/ia/preguntar responde 200 con respuesta y uso de tokens', async 
   assert.equal(llamadas[0].texto, '¿Qué es REST?');
 });
 
+test('cada pregunta queda en el historial con sus tokens', async () => {
+  await request(app).post('/api/ia/preguntar').send({ pregunta: 'Pregunta para el historial' });
+  const res = await request(app).get('/api/ia/historial');
+  assert.equal(res.status, 200);
+  const ultima = res.body[0];
+  assert.equal(ultima.pregunta, 'Pregunta para el historial');
+  assert.equal(ultima.respuesta, 'respuesta simulada');
+  assert.equal(ultima.inputTokens, 10);
+  assert.equal(ultima.outputTokens, 20);
+});
+
+test('una pregunta inválida no se guarda en el historial', async () => {
+  const antes = (await request(app).get('/api/ia/historial')).body.length;
+  await request(app).post('/api/ia/preguntar').send({ pregunta: 'a' });
+  const despues = (await request(app).get('/api/ia/historial')).body.length;
+  assert.equal(despues, antes);
+});
+
 test('POST /api/ia/preguntar con 1 letra responde 400 sin llamar a Claude', async () => {
   const res = await request(app).post('/api/ia/preguntar').send({ pregunta: 'a' });
   assert.equal(res.status, 400);
@@ -136,18 +193,20 @@ for (const [deClaude, esperado] of [[401, 502], [400, 502], [429, 429], [529, 50
   });
 }
 
-test('la especificación OpenAPI documenta los 7 endpoints', () => {
+test('la especificación OpenAPI documenta los 9 endpoints', () => {
   const spec = require('../src/config/swagger');
   const operaciones = Object.entries(spec.paths).flatMap(([ruta, metodos]) =>
     Object.keys(metodos).map((m) => `${m.toUpperCase()} ${ruta}`));
   assert.deepEqual(operaciones.sort(), [
     'DELETE /api/notas/{id}',
     'GET /api-docs',
+    'GET /api/ia/historial',
     'GET /api/notas',
     'GET /api/notas/{id}',
     'POST /api/ia/preguntar',
     'POST /api/notas',
     'POST /api/notas/{id}/resumen',
+    'PUT /api/notas/{id}',
   ]);
 });
 

@@ -1,0 +1,484 @@
+{
+  "info": {
+    "name": "Lab 5: Notas + IA",
+    "description": "API de notas con Express, Prisma y Swagger, integrada con la Claude API.\n\nLas peticiones están en el orden en que conviene ejecutarlas: las dos primeras crean las notas que usan las demás. Se puede enviar una por una o correr la colección completa con el Runner.\n\nLas notas y el historial de preguntas se guardan en una base SQLite, así que siguen ahí al reiniciar el servidor.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "notaId",
+      "value": "1"
+    },
+    {
+      "key": "notaId2",
+      "value": "2"
+    }
+  ],
+  "item": [
+    {
+      "name": "Notas",
+      "description": "CRUD de notas guardadas en la base de datos. No usa Claude.",
+      "item": [
+        {
+          "name": "Crear nota 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "const nota = pm.response.json();",
+                  "pm.test('devuelve la nota con id', () => {",
+                  "  pm.expect(nota.id).to.be.a('number');",
+                  "  pm.expect(nota.titulo).to.eql('Apuntes de REST');",
+                  "});",
+                  "pm.collectionVariables.set('notaId', nota.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Apuntes de REST\",\n  \"contenido\": \"REST es un estilo de arquitectura para construir APIs sobre HTTP. Cada recurso se identifica con una URL y se manipula con los verbos GET, POST, PUT y DELETE. El servidor no guarda estado entre peticiones: cada una lleva todo lo necesario para procesarse. Las respuestas usan códigos de estado como 200, 201, 404 o 500 para indicar el resultado, y normalmente viajan en formato JSON.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/notas",
+            "description": "Crea la nota que después se consulta y se resume. Guarda su id en la variable `notaId`."
+          }
+        },
+        {
+          "name": "Crear nota 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "const nota = pm.response.json();",
+                  "pm.test('devuelve la nota con id', () => pm.expect(nota.id).to.be.a('number'));",
+                  "pm.collectionVariables.set('notaId2', nota.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Pendientes\",\n  \"contenido\": \"Terminar el laboratorio 5 y subir las capturas al repositorio.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/notas",
+            "description": "Crea la nota que se elimina al final. Guarda su id en la variable `notaId2`."
+          }
+        },
+        {
+          "name": "Listar notas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('la lista incluye las dos notas creadas', () => {",
+                  "  const ids = pm.response.json().map((n) => n.id);",
+                  "  pm.expect(ids).to.include(Number(pm.collectionVariables.get('notaId')));",
+                  "  pm.expect(ids).to.include(Number(pm.collectionVariables.get('notaId2')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/notas"
+          }
+        },
+        {
+          "name": "Obtener una nota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('es la nota pedida', () => {",
+                  "  const nota = pm.response.json();",
+                  "  pm.expect(nota.id).to.eql(Number(pm.collectionVariables.get('notaId')));",
+                  "  pm.expect(nota).to.include.keys('id', 'titulo', 'contenido', 'creadaEn', 'actualizadaEn');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/notas/{{notaId}}"
+          }
+        },
+        {
+          "name": "Actualizar la nota 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('devuelve la nota con el título nuevo', () => {",
+                  "  const nota = pm.response.json();",
+                  "  pm.expect(nota.id).to.eql(Number(pm.collectionVariables.get('notaId2')));",
+                  "  pm.expect(nota.titulo).to.eql('Pendientes del lab');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Pendientes del lab\",\n  \"contenido\": \"Grabar la demostración y entregar el enlace del repositorio.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/notas/{{notaId2}}",
+            "description": "Reemplaza el título y el contenido de la nota. La fecha `actualizadaEn` cambia sola."
+          }
+        },
+        {
+          "name": "Obtener una nota que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('el error es Nota no encontrada', () => pm.expect(pm.response.json()).to.eql({ error: 'Nota no encontrada' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/notas/99999"
+          }
+        },
+        {
+          "name": "Crear nota con body vacío",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('trae el detalle de Zod', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.error).to.eql('Datos inválidos');",
+                  "  pm.expect(body.errores).to.be.an('array').with.length.of.at.least(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/notas",
+            "description": "La validación con Zod rechaza la petición antes de llegar a la ruta."
+          }
+        }
+      ]
+    },
+    {
+      "name": "IA",
+      "description": "Endpoints que llaman a la Claude API. Cada petición exitosa consume créditos. Límite: 10 por minuto en cada ruta.",
+      "item": [
+        {
+          "name": "Pregunta libre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('devuelve la misma pregunta', () => pm.expect(body.pregunta).to.eql('Explica en dos frases qué es REST.'));",
+                  "pm.test('trae la respuesta del modelo', () => pm.expect(body.respuesta).to.be.a('string').and.not.empty);",
+                  "pm.test('trae el uso de tokens', () => {",
+                  "  pm.expect(body.uso.input_tokens).to.be.above(0);",
+                  "  pm.expect(body.uso.output_tokens).to.be.above(0);",
+                  "});",
+                  "console.log('tokens de entrada:', body.uso.input_tokens, '| tokens de salida:', body.uso.output_tokens);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"Explica en dos frases qué es REST.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/ia/preguntar",
+            "description": "Envía la pregunta a Claude y devuelve la respuesta junto con los tokens consumidos."
+          }
+        },
+        {
+          "name": "Historial de preguntas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('la consulta más reciente es la pregunta anterior', () => {",
+                  "  const ultima = pm.response.json()[0];",
+                  "  pm.expect(ultima.pregunta).to.eql('Explica en dos frases qué es REST.');",
+                  "  pm.expect(ultima.inputTokens).to.be.above(0);",
+                  "  pm.expect(ultima.outputTokens).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/ia/historial",
+            "description": "Cada pregunta respondida queda guardada con su respuesta y los tokens que gastó. No llama a Claude."
+          }
+        },
+        {
+          "name": "Resumir la nota 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('el resumen es de la nota pedida', () => pm.expect(body.notaId).to.eql(Number(pm.collectionVariables.get('notaId'))));",
+                  "pm.test('trae el resumen', () => pm.expect(body.resumen).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/notas/{{notaId}}/resumen",
+            "description": "Busca la nota con `notas.service` y le pide a Claude un resumen en 3 viñetas. La instrucción va en el parámetro `system`."
+          }
+        },
+        {
+          "name": "Resumir una nota que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404 sin llamar a Claude', () => pm.response.to.have.status(404));",
+                  "pm.test('el error es Nota no encontrada', () => pm.expect(pm.response.json()).to.eql({ error: 'Nota no encontrada' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/notas/99999/resumen"
+          }
+        },
+        {
+          "name": "Pregunta de 1 letra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400 sin llamar a Claude', () => pm.response.to.have.status(400));",
+                  "pm.test('el error es de validación', () => pm.expect(pm.response.json().error).to.eql('Datos inválidos'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/ia/preguntar",
+            "description": "La pregunta debe tener entre 3 y 2000 caracteres. Validar antes evita gastar créditos."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Eliminar",
+      "description": "Elimina la nota 2 y comprueba que ya no existe.",
+      "item": [
+        {
+          "name": "Eliminar la nota 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 204 sin contenido', () => {",
+                  "  pm.response.to.have.status(204);",
+                  "  pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/notas/{{notaId2}}"
+          }
+        },
+        {
+          "name": "Obtener la nota eliminada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/notas/{{notaId2}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clave falsa (manual)",
+      "description": "No se ejecuta con el resto. Antes de enviarla, cambiar ANTHROPIC_API_KEY en .env por un texto cualquiera y reiniciar el servidor (escribir rs en su ventana).",
+      "item": [
+        {
+          "name": "Pregunta con API key falsa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 502', () => pm.response.to.have.status(502));",
+                  "pm.test('el error es genérico, sin detalles de Claude', () => pm.expect(pm.response.json()).to.eql({ error: 'IA_NO_DISPONIBLE' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Qué es REST?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/ia/preguntar",
+            "description": "Con una clave inválida Claude responde 401. La API lo registra en la consola del servidor y al cliente le devuelve 502 IA_NO_DISPONIBLE."
+          }
+        }
+      ]
+    }
+  ]
+}
