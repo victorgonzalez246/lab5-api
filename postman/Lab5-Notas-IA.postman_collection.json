@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Lab 5: Notas + IA",
-    "description": "API de notas con Express, Prisma y Swagger, integrada con la Claude API.\n\nLas peticiones están en el orden en que conviene ejecutarlas: las dos primeras crean las notas que usan las demás. Se puede enviar una por una o correr la colección completa con el Runner.\n\nLas notas y el historial de preguntas se guardan en una base SQLite, así que siguen ahí al reiniciar el servidor.",
+    "description": "API de notas con Express, Sequelize y Swagger, integrada con la Claude API.\n\nLas peticiones están en el orden en que conviene ejecutarlas: las dos primeras crean las notas que usan las demás. Se puede enviar una por una o correr la colección completa con el Runner.\n\nLas notas y el historial de preguntas se guardan en una base SQLite, así que siguen ahí al reiniciar el servidor.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [

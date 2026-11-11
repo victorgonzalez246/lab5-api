@@ -205,10 +205,10 @@ Se resolvió integrando `feature/notas` dentro de `feature/ia` y editando el arc
 
 Los datos se guardan con Sequelize en SQLite. `npm run migrate` crea las tablas `notas` y `consultas` a partir de los modelos definidos en `src/models/index.js`.
 
-| Migración | Tabla | Qué guarda |
+| Modelo | Tabla | Qué guarda |
 |---|---|---|
-| `crear_notas` | `notas` | `id`, `titulo`, `contenido`, `creadaEn`, `actualizadaEn` |
-| `crear_consultas` | `consultas` | Cada pregunta hecha a Claude: `pregunta`, `respuesta`, `inputTokens`, `outputTokens`, `creadaEn` |
+| `Nota` | `notas` | `id`, `titulo`, `contenido`, `creadaEn`, `actualizadaEn` |
+| `Consulta` | `consultas` | Cada pregunta hecha a Claude: `pregunta`, `respuesta`, `inputTokens`, `outputTokens`, `creadaEn` |
 
 ```bash
 npm run migrate  # crea las tablas si todavía no existen
