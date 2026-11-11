@@ -21,8 +21,8 @@ El laboratorio se hizo de forma individual, así que una sola persona cubrió lo
 ## Instalación y ejecución
 
 ```bash
-git clone https://github.com/<usuario>/<repositorio>.git
-cd <repositorio>
+git clone https://github.com/victorgonzalez246/lab5-api.git
+cd lab5-api
 npm install
 cp .env.example .env      # en Windows: copy .env.example .env
 ```
