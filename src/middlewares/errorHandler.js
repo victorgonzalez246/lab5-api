@@ -7,7 +7,6 @@ module.exports = (err, req, res, next) => {
     return res.status(err.status).json({ error: err.message });
   }
 
-  // JSON mal formado en el body (lo lanza express.json()).
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'JSON inválido' });
   }
