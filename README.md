@@ -60,7 +60,7 @@ El archivo `.env` está en `.gitignore` y no se sube. `.env.example` sí se sube
 | POST | `/api/notas/:id/resumen` | Resume una nota en 3 viñetas | Sí |
 | GET | `/api-docs` | Documentación interactiva (Swagger UI) | No |
 
-Las notas se guardan en memoria, así que se pierden al reiniciar el servidor.
+Las notas se guardan en memoria, así que se pierden al reiniciar el servidor. Para que siempre haya con qué probar, al arrancar se cargan dos notas de ejemplo con los id 1 y 2.
 
 ### Respuestas de error
 
