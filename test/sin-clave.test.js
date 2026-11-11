@@ -1,14 +1,16 @@
 // Sin API key configurada, los endpoints de IA responden 502 en vez de un 500.
-// Se deja vacía en vez de borrarla: Prisma carga el .env al iniciar y la volvería a poner.
+// Se deja vacía en vez de borrarla para simular una variable sin configurar.
 process.env.ANTHROPIC_API_KEY = '';
 require('../scripts/preparar-bd-pruebas')('sin-clave');
 
-const { test, after } = require('node:test');
+const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const app = require('../src/app');
 
-after(() => require('../src/config/prisma').$disconnect());
+const { sequelize } = require('../src/models');
+before(() => sequelize.sync({ force: true }));
+after(() => sequelize.close());
 
 test('sin ANTHROPIC_API_KEY, preguntar responde 502 IA_NO_DISPONIBLE', async () => {
   const res = await request(app)

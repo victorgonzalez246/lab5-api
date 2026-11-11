@@ -30,7 +30,7 @@ cp .env.example .env      # en Windows: copy .env.example .env
 Abrir `.env` y pegar la API key en `ANTHROPIC_API_KEY`. Después:
 
 ```bash
-npm run migrate  # crea la base SQLite y aplica las migraciones
+npm run migrate  # crea la base SQLite y las tablas Sequelize
 npm run seed     # opcional: carga dos notas de ejemplo
 npm run dev      # desarrollo, reinicia al guardar (nodemon)
 npm start        # ejecución normal
@@ -47,7 +47,7 @@ La documentación queda en http://localhost:3000/api-docs.
 | `CLAUDE_MODEL` | Modelo que se usa en las llamadas. Se puede cambiar sin tocar el código. |
 | `PORT` | Puerto del servidor (3000 por defecto). |
 | `IA_LIMITE_POR_MINUTO` | Máximo de peticiones por minuto a cada ruta de IA (10 por defecto). |
-| `DATABASE_URL` | Ubicación de la base SQLite. `file:./dev.db` la deja en `prisma/dev.db`. |
+| `DATABASE_URL` | Ubicación de la base SQLite. `file:./dev.db` la deja en `data/dev.db`. |
 
 El archivo `.env` está en `.gitignore` y no se sube. `.env.example` sí se sube, sin la clave.
 
@@ -83,13 +83,13 @@ Todos los errores tienen la misma forma: `{ "error": "..." }`. Los de validació
 ## Estructura
 
 ```
-prisma/
-├── schema.prisma                modelos Nota y Consulta
-├── migrations/                  una carpeta por migración, con su SQL
+scripts/
+├── migrar-bd.js                 crea las tablas SQLite con Sequelize
 └── seed.js                      notas de ejemplo
 src/
 ├── config/swagger.js            especificación OpenAPI
-├── config/prisma.js             conexión a la base de datos
+├── config/database.js           conexión Sequelize a SQLite
+├── models/index.js              modelos Nota y Consulta
 ├── routes/notas.routes.js       CRUD de notas y resumen
 ├── routes/ia.routes.js          pregunta libre e historial
 ├── services/notas.service.js    notas en la base de datos
@@ -201,9 +201,9 @@ El conflicto fue en `src/routes/notas.routes.js`, que es justo el punto donde se
 
 Se resolvió integrando `feature/notas` dentro de `feature/ia` y editando el archivo a mano para conservar los dos bloques: primero las rutas del CRUD y al final la de resumen, que depende de `notas.buscar()`. También se mantuvo el `require` de `claude.service` que venía de `feature/ia`. Con los dos bloques en su sitio se hizo el commit del merge, y después se comprobó con las pruebas automatizadas que todo seguía funcionando. `notas.service.js` solo había cambiado en `feature/notas`, así que Git lo integró sin ayuda.
 
-## Base de datos y migraciones
+## Base de datos
 
-Los datos se guardan con Prisma en SQLite. Hay dos tablas, cada una creada por su migración:
+Los datos se guardan con Sequelize en SQLite. `npm run migrate` crea las tablas `notas` y `consultas` a partir de los modelos definidos en `src/models/index.js`.
 
 | Migración | Tabla | Qué guarda |
 |---|---|---|
@@ -211,16 +211,15 @@ Los datos se guardan con Prisma en SQLite. Hay dos tablas, cada una creada por s
 | `crear_consultas` | `consultas` | Cada pregunta hecha a Claude: `pregunta`, `respuesta`, `inputTokens`, `outputTokens`, `creadaEn` |
 
 ```bash
-npm run migrate                              # aplica las migraciones pendientes
-npx prisma migrate dev --name <nombre>       # crea una migración nueva tras cambiar schema.prisma
-npx prisma studio                            # abre la base en el navegador
+npm run migrate  # crea las tablas si todavía no existen
+npm run seed     # agrega notas de ejemplo si la tabla está vacía
 ```
 
-El archivo de la base (`prisma/dev.db`) no se sube al repositorio; se reconstruye con las migraciones.
+La base predeterminada se guarda en `data/dev.db`, que no se sube al repositorio. `DATABASE_URL=file:./otro.db` permite elegir otro archivo dentro de `data/`.
 
 ## Retos extra
 
-- **Persistencia:** el arreglo en memoria se reemplazó por Prisma con SQLite. `notas.service` conserva las mismas funciones (`listar`, `buscar`, `crear`, `eliminar`) y suma `actualizar`, así que las rutas casi no cambiaron.
+- **Persistencia:** el arreglo en memoria se reemplazó por Sequelize con SQLite. `notas.service` conserva las mismas funciones (`listar`, `buscar`, `crear`, `eliminar`) y suma `actualizar`, así que las rutas casi no cambiaron.
 - **Costo:** cada pregunta respondida se guarda con sus tokens de entrada y de salida, y se consulta en `GET /api/ia/historial`.
 - **Rate limit:** las dos rutas que llaman a Claude (`/api/ia/preguntar` y `/api/notas/:id/resumen`) están protegidas con `express-rate-limit`. Al pasar el límite responden `429` con `{ "error": "DEMASIADAS_PETICIONES" }`. El límite se ajusta con `IA_LIMITE_POR_MINUTO`.
-- **Pruebas automatizadas:** `npm test` ejecuta las pruebas de `test/` con `supertest` y el runner de Node. `claude.service` se reemplaza por una versión simulada, así que no se hace ninguna llamada real ni se gastan créditos. Cada archivo de pruebas usa su propia base SQLite, creada con las mismas migraciones. También se prueba la traducción de errores de Claude (401, 400, 429 y 529).
+- **Pruebas automatizadas:** `npm test` ejecuta las pruebas de `test/` con `supertest` y el runner de Node. `claude.service` se reemplaza por una versión simulada, así que no se hace ninguna llamada real ni se gastan créditos. Cada archivo de pruebas usa su propia base SQLite. También se prueba la traducción de errores de Claude (401, 400, 429 y 529).

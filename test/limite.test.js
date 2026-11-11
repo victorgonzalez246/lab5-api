@@ -3,14 +3,16 @@ process.env.ANTHROPIC_API_KEY = 'sk-ant-clave-de-prueba';
 process.env.IA_LIMITE_POR_MINUTO = '3';
 require('../scripts/preparar-bd-pruebas')('limite');
 
-const { test, after } = require('node:test');
+const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 
 const claude = require('../src/services/claude.service');
 const app = require('../src/app');
 
-after(() => require('../src/config/prisma').$disconnect());
+const { sequelize } = require('../src/models');
+before(() => sequelize.sync({ force: true }));
+after(() => sequelize.close());
 
 claude.preguntar = async () => ({
   respuesta: 'ok',

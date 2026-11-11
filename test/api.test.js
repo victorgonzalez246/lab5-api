@@ -5,16 +5,17 @@ process.env.CLAUDE_MODEL = 'modelo-de-prueba';
 process.env.IA_LIMITE_POR_MINUTO = '100';
 require('../scripts/preparar-bd-pruebas')('api');
 
-const { test, beforeEach, after } = require('node:test');
+const { test, before, beforeEach, after } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const claude = require('../src/services/claude.service');
 const app = require('../src/app');
-const prisma = require('../src/config/prisma');
+const { sequelize, Nota } = require('../src/models');
 
-after(() => prisma.$disconnect());
+before(() => sequelize.sync({ force: true }));
+after(() => sequelize.close());
 
 let llamadas;
 
@@ -54,7 +55,7 @@ test('GET /api/notas/:id devuelve la nota', async () => {
 
 test('las notas se guardan en la base con sus fechas', async () => {
   const creada = (await request(app).post('/api/notas').send(nota)).body;
-  const enBD = await prisma.nota.findUnique({ where: { id: creada.id } });
+  const enBD = await Nota.findByPk(creada.id);
   assert.equal(enBD.titulo, nota.titulo);
   assert.ok(enBD.creadaEn instanceof Date);
 });
