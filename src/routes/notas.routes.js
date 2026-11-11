@@ -31,7 +31,7 @@ router.get('/', (req, res) => res.json(notas.listar()));
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema: { type: integer, example: 1 }
  *     responses:
  *       200: { description: La nota solicitada }
  *       404: { description: Nota no encontrada }
@@ -68,7 +68,7 @@ router.post('/', validar(notaSchema), (req, res) =>
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema: { type: integer, example: 1 }
  *     responses:
  *       204: { description: Nota eliminada }
  *       404: { description: Nota no encontrada }
@@ -88,7 +88,7 @@ router.delete('/:id', (req, res) => {
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema: { type: integer, example: 1 }
  *     responses:
  *       200: { description: Resumen de la nota }
  *       404: { description: Nota no encontrada }
