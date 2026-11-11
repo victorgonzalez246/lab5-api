@@ -98,11 +98,17 @@ docs/                            capturas de Swagger UI
 
 | Prueba | Captura |
 |---|---|
-| Pregunta libre en `POST /api/ia/preguntar` (200 con respuesta y uso de tokens) | `docs/preguntar.png` |
-| Resumen de la nota 1 con `POST /api/notas/1/resumen` (200 con 3 viñetas) | `docs/resumen.png` |
+| Pregunta libre en `POST /api/ia/preguntar` (200 con respuesta y uso de tokens) | [`docs/preguntar.png`](docs/preguntar.png) |
+| Resumen de la nota 1 con `POST /api/notas/1/resumen` (200 con 3 viñetas) | [`docs/resumen.png`](docs/resumen.png) |
 | Pregunta con una API key falsa (502 `IA_NO_DISPONIBLE`, 401 en la consola) | [`docs/clave-falsa.png`](docs/clave-falsa.png) |
 
-_Pendiente: tomar las dos primeras capturas con la API key real y guardarlas en `docs/` con esos nombres._
+### Pregunta libre
+
+![Swagger UI con la respuesta 200 de POST /api/ia/preguntar](docs/preguntar.png)
+
+### Resumen de una nota
+
+![Swagger UI con la respuesta 200 de POST /api/notas/1/resumen](docs/resumen.png)
 
 ### Pregunta con una API key falsa
 
@@ -139,12 +145,12 @@ En `POST /api/notas/:id/resumen` el contenido de la nota va en `messages` y la i
 
 | Texto de `system` | Qué cambió en la respuesta |
 |---|---|
-| «Resume el texto en 3 viñetas breves, en español.» | _Pendiente_ |
-| «Resume el texto en una frase.» | _Pendiente_ |
-| «Extrae las palabras clave.» | _Pendiente_ |
-| «Traduce el texto al inglés.» | _Pendiente_ |
+| «Resume el texto en 3 viñetas breves, en español.» | Devolvió tres viñetas, una por idea: recursos y verbos HTTP, sin estado, y respuestas con códigos y JSON. Agregó por su cuenta un título «Resumen REST». |
+| «Resume el texto en una frase.» | Una sola oración larga que junta las mismas ideas (63 tokens de salida). |
+| «Extrae las palabras clave.» | Ya no resumió: devolvió una lista numerada de 11 términos con una explicación corta cada uno, y repitió «Verbos HTTP». Fue la respuesta más larga (180 tokens de salida). |
+| «Traduce el texto al inglés.» | Devolvió la nota completa traducida al inglés, sin resumir nada (113 tokens de salida). |
 
-_Pendiente: llenar la tabla con lo observado al probar con la API key real._
+La nota de prueba fue un párrafo sobre REST. En los cuatro casos el contenido de `messages` fue idéntico (144 o 145 tokens de entrada contando el `system`); lo único que cambió fue la instrucción, y con ella cambiaron la tarea, el idioma, el formato y la longitud de la respuesta. También se nota que el modelo añade títulos en Markdown aunque no se le pidan: si se quisiera texto plano habría que decirlo en `system`.
 
 ## Preguntas de reflexión
 
@@ -162,12 +168,12 @@ Responde `502` con `{ "error": "IA_NO_DISPONIBLE" }`, y el 401 original con su m
 
 **4. `input_tokens` y `output_tokens` de dos llamadas. ¿Qué parámetro permite limitar el costo?**
 
-| Llamada | `input_tokens` | `output_tokens` |
+| Pregunta enviada a `POST /api/ia/preguntar` | `input_tokens` | `output_tokens` |
 |---|---|---|
-| _Pendiente_ | | |
-| _Pendiente_ | | |
+| «Explica en dos frases qué es un JSON.» | 36 | 79 |
+| «¿Qué es REST?» | 32 | 387 |
 
-_Pendiente: anotar los valores de `uso` que devuelve `POST /api/ia/preguntar` en dos pruebas reales._
+Las dos preguntas pesan casi lo mismo de entrada, pero la segunda costó casi cinco veces más de salida porque no le pusimos límite de longitud y el modelo respondió con títulos, listas y un ejemplo. Lo que más pesa en el costo es la salida.
 
 El parámetro que limita el costo de la respuesta es `max_tokens` (aquí 1024): el modelo no puede generar más tokens de salida que ese número. El costo de entrada lo limitamos con la validación, que no deja pasar preguntas de más de 2000 caracteres ni notas de más de 5000. También influye `CLAUDE_MODEL`, porque cada modelo tiene un precio por token distinto.
 
