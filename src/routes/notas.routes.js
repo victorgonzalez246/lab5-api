@@ -17,14 +17,7 @@ const notaSchema = z.object({
  *     summary: Lista todas las notas
  *     tags: [Notas]
  *     responses:
- *       200:
- *         description: Lista de notas (vacía si aún no hay ninguna)
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Nota'
+ *       200: { description: Lista de notas }
  */
 router.get('/', (req, res) => res.json(notas.listar()));
 
@@ -32,19 +25,16 @@ router.get('/', (req, res) => res.json(notas.listar()));
  * @openapi
  * /api/notas/{id}:
  *   get:
- *     summary: Obtiene una nota por su id
+ *     summary: Obtiene una nota
  *     tags: [Notas]
  *     parameters:
- *       - $ref: '#/components/parameters/NotaId'
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
  *     responses:
- *       200:
- *         description: La nota solicitada
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Nota'
- *       404:
- *         $ref: '#/components/responses/NotaNoEncontrada'
+ *       200: { description: La nota solicitada }
+ *       404: { description: Nota no encontrada }
  */
 router.get('/:id', (req, res) =>
   res.json(notas.buscar(Number(req.params.id))));
@@ -62,14 +52,8 @@ router.get('/:id', (req, res) =>
  *           schema:
  *             $ref: '#/components/schemas/Nota'
  *     responses:
- *       201:
- *         description: Nota creada, con su id
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Nota'
- *       400:
- *         $ref: '#/components/responses/DatosInvalidos'
+ *       201: { description: Nota creada con su id }
+ *       400: { description: Datos inválidos }
  */
 router.post('/', validar(notaSchema), (req, res) =>
   res.status(201).json(notas.crear(req.body)));
@@ -81,12 +65,13 @@ router.post('/', validar(notaSchema), (req, res) =>
  *     summary: Elimina una nota
  *     tags: [Notas]
  *     parameters:
- *       - $ref: '#/components/parameters/NotaId'
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
  *     responses:
- *       204:
- *         description: Nota eliminada (sin contenido)
- *       404:
- *         $ref: '#/components/responses/NotaNoEncontrada'
+ *       204: { description: Nota eliminada }
+ *       404: { description: Nota no encontrada }
  */
 router.delete('/:id', (req, res) => {
   notas.eliminar(Number(req.params.id));
@@ -100,22 +85,16 @@ router.delete('/:id', (req, res) => {
  *     summary: Resume una nota en 3 viñetas con Claude
  *     tags: [IA]
  *     parameters:
- *       - $ref: '#/components/parameters/NotaId'
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
  *     responses:
- *       200:
- *         description: Resumen generado por el modelo
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Resumen'
- *       404:
- *         $ref: '#/components/responses/NotaNoEncontrada'
- *       429:
- *         $ref: '#/components/responses/DemasiadasPeticiones'
- *       502:
- *         $ref: '#/components/responses/IANoDisponible'
- *       503:
- *         $ref: '#/components/responses/IASaturada'
+ *       200: { description: Resumen de la nota }
+ *       404: { description: Nota no encontrada }
+ *       429: { description: Demasiadas peticiones }
+ *       502: { description: Claude no disponible }
+ *       503: { description: Claude saturado temporalmente }
  */
 router.post('/:id/resumen', limiteIA(), async (req, res) => {
   const nota = notas.buscar(Number(req.params.id)); // 404 si no existe
