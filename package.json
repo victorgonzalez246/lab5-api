@@ -7,15 +7,23 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "migrate": "prisma migrate deploy",
+    "seed": "node prisma/seed.js"
   },
-  "keywords": ["express", "swagger", "openapi", "claude"],
+  "keywords": [
+    "express",
+    "swagger",
+    "openapi",
+    "claude"
+  ],
   "license": "ISC",
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
+    "@prisma/client": "^6.19.3",
     "dotenv": "^18.0.10",
     "express": "^5.3.0",
     "express-rate-limit": "^8.7.4",
@@ -25,6 +33,10 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
+    "prisma": "^6.19.3",
     "supertest": "^7.3.2"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
