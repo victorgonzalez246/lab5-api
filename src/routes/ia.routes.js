@@ -21,20 +21,11 @@ const preguntaSchema = z.object({
  *           schema:
  *             $ref: '#/components/schemas/Pregunta'
  *     responses:
- *       200:
- *         description: Respuesta del modelo y tokens consumidos
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/RespuestaIA'
- *       400:
- *         $ref: '#/components/responses/DatosInvalidos'
- *       429:
- *         $ref: '#/components/responses/DemasiadasPeticiones'
- *       502:
- *         $ref: '#/components/responses/IANoDisponible'
- *       503:
- *         $ref: '#/components/responses/IASaturada'
+ *       200: { description: Respuesta del modelo }
+ *       400: { description: Datos inválidos }
+ *       429: { description: Demasiadas peticiones }
+ *       502: { description: Claude no disponible }
+ *       503: { description: Claude saturado temporalmente }
  */
 router.post('/preguntar', limiteIA(), validar(preguntaSchema), async (req, res) => {
   const r = await claude.preguntar(req.body.pregunta);

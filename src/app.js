@@ -13,12 +13,7 @@ app.use(express.json());
  *     summary: Documentación interactiva (Swagger UI)
  *     tags: [Documentación]
  *     responses:
- *       200:
- *         description: Página HTML de Swagger UI
- *         content:
- *           text/html:
- *             schema:
- *               type: string
+ *       200: { description: Página de Swagger UI }
  */
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
 app.use('/api/notas', require('./routes/notas.routes'));
