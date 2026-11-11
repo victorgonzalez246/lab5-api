@@ -56,7 +56,7 @@ El archivo `.env` está en `.gitignore` y no se sube. `.env.example` sí se sube
 | GET | `/api/notas/:id` | Obtiene una nota | No |
 | POST | `/api/notas` | Crea una nota (`titulo`, `contenido`) | No |
 | DELETE | `/api/notas/:id` | Elimina una nota | No |
-| POST | `/api/ia/preguntar` | Envía una pregunta libre al modelo | Sí |
+| POST | `/api/ia/preguntar` | Envía una pregunta libre al modelo y devuelve `pregunta`, `respuesta` y `uso` | Sí |
 | POST | `/api/notas/:id/resumen` | Resume una nota en 3 viñetas | Sí |
 | GET | `/api-docs` | Documentación interactiva (Swagger UI) | No |
 
@@ -170,10 +170,10 @@ Responde `502` con `{ "error": "IA_NO_DISPONIBLE" }`, y el 401 original con su m
 
 | Pregunta enviada a `POST /api/ia/preguntar` | `input_tokens` | `output_tokens` |
 |---|---|---|
-| «Explica en dos frases qué es un JSON.» | 36 | 79 |
-| «¿Qué es REST?» | 32 | 387 |
+| «Explica en dos frases qué es un JSON.» | 56 | 89 |
+| «¿Qué es REST?» | 52 | 110 |
 
-Las dos preguntas pesan casi lo mismo de entrada, pero la segunda costó casi cinco veces más de salida porque no le pusimos límite de longitud y el modelo respondió con títulos, listas y un ejemplo. Lo que más pesa en el costo es la salida.
+En las dos, la salida pesa más que la entrada. La instrucción de `system` pide responder en un máximo de tres frases y en texto plano: antes de ponerla, la misma pregunta «¿Qué es REST?» devolvía títulos, listas y un ejemplo y gastaba 387 tokens de salida con solo 32 de entrada. El `system` más largo sube un poco la entrada (de 32 a 52), pero baja mucho la salida.
 
 El parámetro que limita el costo de la respuesta es `max_tokens` (aquí 1024): el modelo no puede generar más tokens de salida que ese número. El costo de entrada lo limitamos con la validación, que no deja pasar preguntas de más de 2000 caracteres ni notas de más de 5000. También influye `CLAUDE_MODEL`, porque cada modelo tiene un precio por token distinto.
 

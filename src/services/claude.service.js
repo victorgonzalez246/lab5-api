@@ -17,12 +17,19 @@ async function preguntar(texto, system) {
   const msg = await getClient().messages.create({
     model: process.env.CLAUDE_MODEL,
     max_tokens: 1024,
-    system: system ?? 'Eres un asistente útil. Responde en español.',
+    system: system ??
+      'Eres un asistente útil. Responde en español con un máximo de tres frases, en texto plano, sin Markdown ni listas.',
     messages: [{ role: 'user', content: texto }],
   });
 
   const bloque = msg.content.find((b) => b.type === 'text');
-  return { respuesta: bloque?.text ?? '', uso: msg.usage };
+  return {
+    respuesta: bloque?.text ?? '',
+    uso: {
+      input_tokens: msg.usage.input_tokens,
+      output_tokens: msg.usage.output_tokens,
+    },
+  };
 }
 
 module.exports = { preguntar };

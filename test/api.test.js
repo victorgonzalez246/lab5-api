@@ -88,8 +88,11 @@ test('POST /api/ia/preguntar responde 200 con respuesta y uso de tokens', async 
     .post('/api/ia/preguntar')
     .send({ pregunta: '¿Qué es REST?' });
   assert.equal(res.status, 200);
-  assert.equal(res.body.respuesta, 'respuesta simulada');
-  assert.deepEqual(res.body.uso, { input_tokens: 10, output_tokens: 20 });
+  assert.deepEqual(res.body, {
+    pregunta: '¿Qué es REST?',
+    respuesta: 'respuesta simulada',
+    uso: { input_tokens: 10, output_tokens: 20 },
+  });
   assert.equal(llamadas[0].texto, '¿Qué es REST?');
 });
 
