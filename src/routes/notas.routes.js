@@ -10,7 +10,15 @@ const notaSchema = z.object({
 
 router.get('/', (req, res) => res.json(notas.listar()));
 
+router.get('/:id', (req, res) =>
+  res.json(notas.buscar(Number(req.params.id))));
+
 router.post('/', validar(notaSchema), (req, res) =>
   res.status(201).json(notas.crear(req.body)));
+
+router.delete('/:id', (req, res) => {
+  notas.eliminar(Number(req.params.id));
+  res.status(204).end();
+});
 
 module.exports = router;
