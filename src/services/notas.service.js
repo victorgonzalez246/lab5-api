@@ -18,4 +18,9 @@ function crear({ titulo, contenido }) {
   return n;
 }
 
-module.exports = { listar, buscar, crear };
+function eliminar(id) {
+  const n = buscar(id); // lanza el 404 si no existe
+  notas = notas.filter((x) => x.id !== n.id);
+}
+
+module.exports = { listar, buscar, crear, eliminar };
