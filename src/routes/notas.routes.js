@@ -19,7 +19,7 @@ const notaSchema = z.object({
  *     responses:
  *       200: { description: Lista de notas }
  */
-router.get('/', (req, res) => res.json(notas.listar()));
+router.get('/', async (req, res) => res.json(await notas.listar()));
 
 /**
  * @openapi
@@ -36,8 +36,8 @@ router.get('/', (req, res) => res.json(notas.listar()));
  *       200: { description: La nota solicitada }
  *       404: { description: Nota no encontrada }
  */
-router.get('/:id', (req, res) =>
-  res.json(notas.buscar(Number(req.params.id))));
+router.get('/:id', async (req, res) =>
+  res.json(await notas.buscar(Number(req.params.id))));
 
 /**
  * @openapi
@@ -55,8 +55,33 @@ router.get('/:id', (req, res) =>
  *       201: { description: Nota creada con su id }
  *       400: { description: Datos inválidos }
  */
-router.post('/', validar(notaSchema), (req, res) =>
-  res.status(201).json(notas.crear(req.body)));
+router.post('/', validar(notaSchema), async (req, res) =>
+  res.status(201).json(await notas.crear(req.body)));
+
+/**
+ * @openapi
+ * /api/notas/{id}:
+ *   put:
+ *     summary: Actualiza una nota
+ *     tags: [Notas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer, example: 1 }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Nota'
+ *     responses:
+ *       200: { description: Nota actualizada }
+ *       400: { description: Datos inválidos }
+ *       404: { description: Nota no encontrada }
+ */
+router.put('/:id', validar(notaSchema), async (req, res) =>
+  res.json(await notas.actualizar(Number(req.params.id), req.body)));
 
 /**
  * @openapi
@@ -73,8 +98,8 @@ router.post('/', validar(notaSchema), (req, res) =>
  *       204: { description: Nota eliminada }
  *       404: { description: Nota no encontrada }
  */
-router.delete('/:id', (req, res) => {
-  notas.eliminar(Number(req.params.id));
+router.delete('/:id', async (req, res) => {
+  await notas.eliminar(Number(req.params.id));
   res.status(204).end();
 });
 
@@ -97,7 +122,7 @@ router.delete('/:id', (req, res) => {
  *       503: { description: Claude saturado temporalmente }
  */
 router.post('/:id/resumen', limiteIA(), async (req, res) => {
-  const nota = notas.buscar(Number(req.params.id)); // 404 si no existe
+  const nota = await notas.buscar(Number(req.params.id)); // 404 si no existe
   const r = await claude.preguntar(
     nota.contenido,
     'Resume el texto en 3 viñetas breves, en español.'
