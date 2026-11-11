@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { z } = require('zod');
 const validar = require('../middlewares/validar');
+const limiteIA = require('../middlewares/limiteIA');
 const notas = require('../services/notas.service');
 const claude = require('../services/claude.service');
 
@@ -120,7 +121,7 @@ router.delete('/:id', (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/:id/resumen', async (req, res) => {
+router.post('/:id/resumen', limiteIA(), async (req, res) => {
   const nota = notas.buscar(Number(req.params.id)); // 404 si no existe
   const r = await claude.preguntar(
     nota.contenido,

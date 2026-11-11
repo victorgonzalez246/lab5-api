@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { z } = require('zod');
 const validar = require('../middlewares/validar');
+const limiteIA = require('../middlewares/limiteIA');
 const claude = require('../services/claude.service');
 
 const preguntaSchema = z.object({
@@ -39,7 +40,7 @@ const preguntaSchema = z.object({
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/preguntar', validar(preguntaSchema), async (req, res) => {
+router.post('/preguntar', limiteIA(), validar(preguntaSchema), async (req, res) => {
   const r = await claude.preguntar(req.body.pregunta);
   res.json(r);
 });
