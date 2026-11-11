@@ -100,9 +100,21 @@ docs/                            capturas de Swagger UI
 |---|---|
 | Pregunta libre en `POST /api/ia/preguntar` (200 con respuesta y uso de tokens) | `docs/preguntar.png` |
 | Resumen de la nota 1 con `POST /api/notas/1/resumen` (200 con 3 viñetas) | `docs/resumen.png` |
-| Pregunta con una API key falsa (502 `IA_NO_DISPONIBLE`, 401 en la consola) | `docs/clave-falsa.png` |
+| Pregunta con una API key falsa (502 `IA_NO_DISPONIBLE`, 401 en la consola) | [`docs/clave-falsa.png`](docs/clave-falsa.png) |
 
-_Pendiente: tomar las capturas con la API key real y guardarlas en `docs/` con esos nombres._
+_Pendiente: tomar las dos primeras capturas con la API key real y guardarlas en `docs/` con esos nombres._
+
+### Pregunta con una API key falsa
+
+El cliente recibe un 502 genérico:
+
+![Swagger UI con la respuesta 502 IA_NO_DISPONIBLE](docs/clave-falsa.png)
+
+El 401 original de Claude solo aparece en la consola del servidor ([`docs/clave-falsa-consola.txt`](docs/clave-falsa-consola.txt)):
+
+```
+Claude API: 401 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}, ...}
+```
 
 ## Pruebas desde Swagger UI
 
